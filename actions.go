@@ -8,19 +8,9 @@ import (
 	"github.com/mbme/skelet/storage"
 )
 
-//ActionType type of action
-type ActionType string
-
-//Possible action types
-const (
-	RecordsListReq ActionType = "req-records-list"
-	RecordsList               = "records-list"
-	NoType                    = ""
-)
-
 var s = &storage.VirtualStorage{}
 
-func toRawMessage(data interface{}) (*json.RawMessage, error) {
+func toActionParams(data interface{}) (ActionParams, error) {
 	res, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -28,14 +18,14 @@ func toRawMessage(data interface{}) (*json.RawMessage, error) {
 
 	msg := json.RawMessage(res)
 
-	return &msg, err
+	return &msg, nil
 }
 
-type actionHandler func(*json.RawMessage) (ActionType, *json.RawMessage, error)
+type actionHandler func(ActionParams) (ActionType, ActionParams, error)
 
 var handlers = map[ActionType]actionHandler{
-	RecordsListReq: func(_ *json.RawMessage) (ActionType, *json.RawMessage, error) {
-		raw, err := toRawMessage(s.GetAtoms())
+	RecordsListReq: func(_ ActionParams) (ActionType, ActionParams, error) {
+		raw, err := toActionParams(s.GetAtoms())
 
 		if err != nil {
 			return NoType, nil, err
@@ -46,7 +36,7 @@ var handlers = map[ActionType]actionHandler{
 }
 
 // HandleAction handle client action and produce own action
-func HandleAction(actionType ActionType, params *json.RawMessage) (ActionType, *json.RawMessage, error) {
+func HandleAction(actionType ActionType, params ActionParams) (ActionType, ActionParams, error) {
 	handler, ok := handlers[actionType]
 
 	if !ok {

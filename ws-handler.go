@@ -9,10 +9,23 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+//ActionType type of action
+type ActionType string
+
+//ActionParams action raw parameters
+type ActionParams *json.RawMessage
+
+//Possible actions
+const (
+	RecordsListReq ActionType = "req-records-list"
+	RecordsList               = "records-list"
+	NoType                    = ""
+)
+
 //ActionWrapper action
 type ActionWrapper struct {
-	Type   ActionType       `json:"action"`
-	Params *json.RawMessage `json:"params"`
+	Type   ActionType   `json:"action"`
+	Params ActionParams `json:"params"`
 }
 
 var upgrader = websocket.Upgrader{
