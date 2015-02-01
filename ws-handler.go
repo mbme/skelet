@@ -8,11 +8,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type any interface{}
+
 //ActionType type of action
 type ActionType string
 
 //ActionParams action raw parameters
-type ActionParams *json.RawMessage
+type ActionParams json.RawMessage
 
 //Possible actions
 const (
@@ -27,6 +29,12 @@ const (
 type ActionWrapper struct {
 	Type   ActionType      `json:"action"`
 	Params json.RawMessage `json:"params"`
+}
+
+//ActionResultWrapper action result
+type ActionResultWrapper struct {
+	Type   ActionType `json:"action"`
+	Params any        `json:"params"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -48,21 +56,21 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		// parse request
 		req := &ActionWrapper{}
-		err = conn.ReadJSON(req)
-		if err != nil {
+		if err = conn.ReadJSON(req); err != nil {
 			log.Printf("can't parse message: %v\n", err)
 			continue
 		}
 
 		if req.Type == NoType {
-			log.Printf("no type in request %s\n", req)
+			log.Printf("no type in request %v\n", req)
 			continue
 		}
 
-		respType, respParams, err := HandleAction(req.Type, &req.Params)
+		params := ActionParams(req.Params)
+		respType, respParams, err := HandleAction(req.Type, &params)
 
 		if err != nil {
-			log.Printf("can't handle action: %v\n", err)
+			log.Printf("%v -> %v\n", req.Type, err)
 			continue
 		}
 
@@ -73,9 +81,9 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write response
-		resp := &ActionWrapper{
+		resp := &ActionResultWrapper{
 			Type:   respType,
-			Params: *respParams,
+			Params: respParams,
 		}
 
 		// write response
