@@ -26,7 +26,7 @@ func main() {
 		var port = c.String("port")
 		fmt.Printf("listening on port %v\n", port)
 
-		http.HandleFunc("/ws", Handler)
+		http.HandleFunc("/ws", WsHandler)
 
 		if err := http.ListenAndServe(":"+port, nil); err != nil {
 			log.Fatal(err)
