@@ -17,9 +17,9 @@ type ActionParams *json.RawMessage
 
 //Possible actions
 const (
-	RecordsListReq ActionType = "req-records-list"
-	RecordsList               = "records-list"
-	NoType                    = ""
+	AtomsListReq ActionType = "req-atoms-list"
+	AtomsList               = "atoms-list"
+	NoType                  = ""
 )
 
 //ActionWrapper action

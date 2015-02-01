@@ -38,7 +38,7 @@ func newAtomInfo(atom *s.Atom) *atomInfo {
 }
 
 var handlers = map[ActionType]actionHandler{
-	RecordsListReq: func(_ ActionParams) (ActionType, ActionParams, error) {
+	AtomsListReq: func(_ ActionParams) (ActionType, ActionParams, error) {
 		atoms := storage.GetAtoms()
 		infos := make([]*atomInfo, len(atoms))
 		for i, atom := range atoms {
@@ -51,7 +51,7 @@ var handlers = map[ActionType]actionHandler{
 			return NoType, nil, err
 		}
 
-		return RecordsList, raw, nil
+		return AtomsList, raw, nil
 	},
 }
 
