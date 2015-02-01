@@ -5,10 +5,10 @@ import (
 
 	"fmt"
 
-	"github.com/mbme/skelet/storage"
+	s "github.com/mbme/skelet/storage"
 )
 
-var s = &storage.VirtualStorage{}
+var storage = &s.VirtualStorage{}
 
 func toActionParams(data interface{}) (ActionParams, error) {
 	res, err := json.Marshal(data)
@@ -23,9 +23,29 @@ func toActionParams(data interface{}) (ActionParams, error) {
 
 type actionHandler func(ActionParams) (ActionType, ActionParams, error)
 
+type atomInfo struct {
+	ID   s.AtomId   `json:"id"`
+	Type s.AtomType `json:"type"`
+	Name string     `json:"name"`
+}
+
+func newAtomInfo(atom *s.Atom) *atomInfo {
+	return &atomInfo{
+		ID:   atom.ID,
+		Type: atom.Type,
+		Name: atom.Name,
+	}
+}
+
 var handlers = map[ActionType]actionHandler{
 	RecordsListReq: func(_ ActionParams) (ActionType, ActionParams, error) {
-		raw, err := toActionParams(s.GetAtoms())
+		atoms := storage.GetAtoms()
+		infos := make([]*atomInfo, len(atoms))
+		for i, atom := range atoms {
+			infos[i] = newAtomInfo(atom)
+		}
+
+		raw, err := toActionParams(infos)
 
 		if err != nil {
 			return NoType, nil, err

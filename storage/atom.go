@@ -3,6 +3,7 @@ package storage
 import "fmt"
 
 type AtomType string
+type AtomId uint32
 
 const (
 	Record AtomType = ":record"
@@ -11,7 +12,7 @@ const (
 
 type Atom struct {
 	Type AtomType
-	ID   uint32
+	ID   AtomId
 	Name string
 	Data string
 }

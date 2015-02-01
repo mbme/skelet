@@ -4,7 +4,7 @@ type Storager interface {
 	GetAtoms() []*Atom
 }
 
-var idGenerator uint32
+var idGenerator AtomId
 
 func newRecord(name, data string) *Atom {
 	idGenerator++
