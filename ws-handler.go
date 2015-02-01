@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -19,13 +18,15 @@ type ActionParams *json.RawMessage
 const (
 	AtomsListReq ActionType = "req-atoms-list"
 	AtomsList               = "atoms-list"
+	AtomReq                 = "req-atom"
+	Atom                    = "atom"
 	NoType                  = ""
 )
 
 //ActionWrapper action
 type ActionWrapper struct {
-	Type   ActionType   `json:"action"`
-	Params ActionParams `json:"params"`
+	Type   ActionType      `json:"action"`
+	Params json.RawMessage `json:"params"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -45,43 +46,24 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for {
-		// open reader
-		messageType, r, err := conn.NextReader()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		// skip binary messages
-		if messageType != websocket.TextMessage {
-			log.Fatalln("websocket: received binary message")
-			return
-		}
-
-		// read request
-		data, err := ioutil.ReadAll(r)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
 		// parse request
-		var req *ActionWrapper
-		err = json.Unmarshal(data, &req)
+		req := &ActionWrapper{}
+		err = conn.ReadJSON(req)
 		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		if req.Type == NoType {
-			log.Fatalf("no type in request %s\n", string(data))
+			log.Printf("can't parse message: %v\n", err)
 			continue
 		}
 
-		respType, respParams, err := HandleAction(req.Type, req.Params)
+		if req.Type == NoType {
+			log.Printf("no type in request %s\n", req)
+			continue
+		}
+
+		respType, respParams, err := HandleAction(req.Type, &req.Params)
 
 		if err != nil {
-			log.Println(err)
-			return
+			log.Printf("can't handle action: %v\n", err)
+			continue
 		}
 
 		log.Printf("%v -> %v\n", req.Type, respType)
@@ -91,36 +73,15 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write response
-
-		// open writer
-		w, err := conn.NextWriter(messageType)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
 		resp := &ActionWrapper{
 			Type:   respType,
-			Params: respParams,
-		}
-
-		// serialize data
-		data, err = json.Marshal(resp)
-		if err != nil {
-			log.Println(err)
-			return
+			Params: *respParams,
 		}
 
 		// write response
-		if _, err := w.Write(data); err != nil {
-			log.Println(err)
-			return
-		}
-
-		// close writer
-		if err := w.Close(); err != nil {
-			log.Println(err)
-			return
+		if err = conn.WriteJSON(resp); err != nil {
+			log.Printf("can't write response: %v\n", err)
+			continue
 		}
 	}
 }
