@@ -3,12 +3,26 @@ package storage
 import "fmt"
 
 type AtomType string
-type AtomId uint32
 
 const (
 	Record AtomType = ":record"
 	File            = ":file"
 )
+
+type AtomId uint32
+
+type AtomLink struct {
+	Type *AtomType
+	ID   *AtomId
+}
+
+func (l *AtomLink) IsValid() bool {
+	return l.Type != nil && l.ID != nil
+}
+
+func (l *AtomLink) String() string {
+	return fmt.Sprintf("%s/%v", l.Type, l.ID)
+}
 
 type Atom struct {
 	Type AtomType

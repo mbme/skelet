@@ -3,7 +3,15 @@ package main
 import (
 	"errors"
 
+	"log"
+
 	s "github.com/mbme/skelet/storage"
+)
+
+var (
+	ErrorNoHandler = errors.New("no handler for action")
+	ErrorNotFound  = errors.New("atom not found")
+	ErrorBadParams = errors.New("malformed action params")
 )
 
 var storage = &s.VirtualStorage{}
@@ -16,7 +24,7 @@ type atomInfo struct {
 	Name string     `json:"name"`
 }
 
-func newAtomInfo(atom *s.Atom) *atomInfo {
+func toAtomInfo(atom *s.Atom) *atomInfo {
 	return &atomInfo{
 		ID:   atom.ID,
 		Type: atom.Type,
@@ -29,16 +37,33 @@ var handlers = map[ActionType]actionHandler{
 		atoms := storage.GetAtoms()
 		infos := make([]*atomInfo, len(atoms))
 		for i, atom := range atoms {
-			infos[i] = newAtomInfo(atom)
+			infos[i] = toAtomInfo(atom)
 		}
 
 		return AtomsList, infos, nil
 	},
-}
 
-var (
-	ErrorNoHandler = errors.New("no handler for action")
-)
+	AtomReq: func(params *ActionParams) (ActionType, any, error) {
+		link := &s.AtomLink{}
+		if err := params.ReadAs(link); err != nil {
+			log.Printf("error parsing params: %v", err)
+			return NoType, nil, ErrorBadParams
+		}
+
+		if !link.IsValid() {
+			log.Println("error parsing params: not valid atom link")
+			return NoType, nil, ErrorBadParams
+		}
+
+		atom := storage.GetAtom(link)
+		if atom == nil {
+			log.Printf("atom not found: %v", link)
+			return NoType, nil, ErrorNotFound
+		}
+
+		return Atom, atom, nil
+	},
+}
 
 // HandleAction handle client action and produce own action
 func HandleAction(actionType ActionType, params *ActionParams) (ActionType, any, error) {
