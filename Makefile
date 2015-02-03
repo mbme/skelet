@@ -1,20 +1,27 @@
 DIRS := . ./storage
+BASE := .
+GO_FILES = $(wildcard *.go)
 
 clean:
-	rm -f ./skelet
+	rm -f $(BASE)/skelet
 
 build:
-	go build -v
+	go build -v $(BASE)
 
 test:
 	go test -v ${DIRS}
 
 install:
-	go install
+	go install $(BASE)
 
 check:
-	go vet
-	golint
+	go vet $(BASE)
+	golint $(BASE)
 
 run: build
-	./skelet
+	$(BASE)/skelet
+
+serv:
+	node $(BASE)/watch.js $(BASE)
+
+.PHONY: clean build test install check run serv
