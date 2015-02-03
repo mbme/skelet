@@ -10,6 +10,9 @@ import (
 )
 
 func main() {
+	// use stdout instead of stderr
+	log.SetOutput(os.Stdout)
+
 	app := cli.NewApp()
 	app.Name = "go-skelet!"
 
