@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 
@@ -57,16 +58,23 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	log.Println("connection: open")
+
 	for {
 		// parse request
 		req := &ActionWrapper{}
 		if err = conn.ReadJSON(req); err != nil {
-			log.Printf("can't parse message: %v\n", err)
-			continue
+			if err == io.EOF {
+				log.Println("connection: closed")
+				return
+			}
+
+			log.Printf("can't parse message: %v", err)
+			return
 		}
 
 		if req.Type == NoType {
-			log.Printf("no type in request %v\n", req)
+			log.Printf("no type in request %v", req)
 			continue
 		}
 
@@ -74,11 +82,11 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		respType, respParams, err := HandleAction(req.Type, &params)
 
 		if err != nil {
-			log.Printf("%v -> %v\n", req.Type, err)
+			log.Printf("%v -> %v", req.Type, err)
 			continue
 		}
 
-		log.Printf("%v -> %v\n", req.Type, respType)
+		log.Printf("%v -> %v", req.Type, respType)
 
 		if respType == NoType {
 			continue
@@ -92,7 +100,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// write response
 		if err = conn.WriteJSON(resp); err != nil {
-			log.Printf("can't write response: %v\n", err)
+			log.Printf("can't write response: %v", err)
 			continue
 		}
 	}

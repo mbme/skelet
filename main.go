@@ -12,6 +12,7 @@ import (
 func main() {
 	// use stdout instead of stderr
 	log.SetOutput(os.Stdout)
+	log.SetFlags(log.Ltime)
 
 	app := cli.NewApp()
 	app.Name = "go-skelet!"
@@ -26,7 +27,7 @@ func main() {
 
 	app.Action = func(c *cli.Context) {
 		var port = c.String("port")
-		log.Printf("listening on port %v\n", port)
+		log.Printf("listening on port %v", port)
 
 		http.HandleFunc("/ws", WsHandler)
 
