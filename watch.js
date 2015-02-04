@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* jshint esnext: true */
+
 const SIGINT = 'SIGINT';
 
 var watch = require('node-watch');
