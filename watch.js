@@ -13,10 +13,9 @@ var log = function () {
     console.log.apply(console, args);
 };
 
-var args = process.argv.slice(2);
 var config = {
     pattern: /\.go$/,
-    baseDir: args[0] || '.',
+    baseDir: process.argv[2] || '.',
     interval: 5*1000
 };
 config.buildCommand= 'go build ' + config.baseDir;
