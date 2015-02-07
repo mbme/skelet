@@ -30,7 +30,7 @@ var (
 	ErrorBadParams = errors.New("malformed action params")
 )
 
-var storage = &s.VirtualStorage{}
+var storage = s.NewStorage()
 
 type actionHandler func(*ActionParams) (ActionType, any, error)
 

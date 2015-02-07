@@ -5,31 +5,32 @@ type Storager interface {
 	GetAtom(AtomID) *Atom
 }
 
-var idGenerator AtomID
-
-func newRecord(name, data string) *Atom {
-	idGenerator++
+func newRecord(id int, name, data string) *Atom {
 	return &Atom{
 		Type: Record,
-		ID:   idGenerator,
+		ID:   AtomID(id),
 		Name: name,
 		Data: data,
 	}
 }
 
-var records = []*Atom{
-	newRecord("123", "fdas"),
-	newRecord("124", "some text"),
+var records = []*Atom{}
+
+type virtualStorage struct {
 }
 
-type VirtualStorage struct {
+func NewStorage() Storager {
+	for i, rec := range rawData {
+		records = append(records, newRecord(i, rec.Name, rec.Data))
+	}
+	return &virtualStorage{}
 }
 
-func (l *VirtualStorage) GetAtoms() []*Atom {
+func (l *virtualStorage) GetAtoms() []*Atom {
 	return records
 }
 
-func (l *VirtualStorage) GetAtom(id AtomID) *Atom {
+func (l *virtualStorage) GetAtom(id AtomID) *Atom {
 	for _, atom := range l.GetAtoms() {
 		if atom.ID == id {
 			return atom
