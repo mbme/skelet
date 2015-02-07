@@ -11,24 +11,9 @@ import (
 
 type any interface{}
 
-//ActionType type of action
-type ActionType string
-
-//ActionParams action raw parameters
-type ActionParams json.RawMessage
-
-func (p *ActionParams) ReadAs(v any) error {
+func (p *ActionParams) readAs(v any) error {
 	return json.Unmarshal(*p, v)
 }
-
-//Possible actions
-const (
-	AtomsListReq ActionType = "req-atoms-list"
-	AtomsList               = "atoms-list"
-	AtomReq                 = "req-atom"
-	Atom                    = "atom"
-	NoType                  = ""
-)
 
 //ActionWrapper action
 type ActionWrapper struct {

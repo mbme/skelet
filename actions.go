@@ -1,11 +1,27 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 
 	"log"
 
 	s "github.com/mbme/skelet/storage"
+)
+
+//ActionType type of action
+type ActionType string
+
+//ActionParams action raw parameters
+type ActionParams json.RawMessage
+
+//Possible actions
+const (
+	AtomsListReq ActionType = "req-atoms-list"
+	AtomsList               = "atoms-list"
+	AtomReq                 = "req-atom"
+	Atom                    = "atom"
+	NoType                  = ""
 )
 
 var (
@@ -45,7 +61,7 @@ var handlers = map[ActionType]actionHandler{
 
 	AtomReq: func(params *ActionParams) (ActionType, any, error) {
 		link := &s.AtomLink{}
-		if err := params.ReadAs(link); err != nil {
+		if err := params.readAs(link); err != nil {
 			log.Printf("error parsing params: %v", err)
 			return NoType, nil, ErrorBadParams
 		}
