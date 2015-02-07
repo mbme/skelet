@@ -2,10 +2,10 @@ package storage
 
 type Storager interface {
 	GetAtoms() []*Atom
-	GetAtom(*AtomLink) *Atom
+	GetAtom(AtomID) *Atom
 }
 
-var idGenerator AtomId
+var idGenerator AtomID
 
 func newRecord(name, data string) *Atom {
 	idGenerator++
@@ -29,9 +29,9 @@ func (l *VirtualStorage) GetAtoms() []*Atom {
 	return records
 }
 
-func (l *VirtualStorage) GetAtom(link *AtomLink) *Atom {
+func (l *VirtualStorage) GetAtom(id AtomID) *Atom {
 	for _, atom := range l.GetAtoms() {
-		if atom.Type == *link.Type && atom.ID == *link.ID {
+		if atom.ID == id {
 			return atom
 		}
 	}

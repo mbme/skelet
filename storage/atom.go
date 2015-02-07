@@ -2,33 +2,24 @@ package storage
 
 import "fmt"
 
+// AtomType is type of atom
 type AtomType string
 
+// possible atom types
 const (
 	Record AtomType = ":record"
 	File            = ":file"
 )
 
-type AtomId uint32
+// AtomID is id of atom
+type AtomID uint32
 
-type AtomLink struct {
-	Type *AtomType
-	ID   *AtomId
-}
-
-func (l *AtomLink) IsValid() bool {
-	return l.Type != nil && l.ID != nil
-}
-
-func (l *AtomLink) String() string {
-	return fmt.Sprintf("%s/%v", l.Type, l.ID)
-}
-
+// Atom is one information piece
 type Atom struct {
-	Type AtomType
-	ID   AtomId
-	Name string
-	Data string
+	Type AtomType `json:"type"`
+	ID   AtomID   `json:"id"`
+	Name string   `json:"name"`
+	Data string   `json:"data"`
 }
 
 func (a *Atom) String() string {

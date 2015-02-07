@@ -35,7 +35,7 @@ var storage = &s.VirtualStorage{}
 type actionHandler func(*ActionParams) (ActionType, any, error)
 
 type atomInfo struct {
-	ID   s.AtomId   `json:"id"`
+	ID   s.AtomID   `json:"id"`
 	Type s.AtomType `json:"type"`
 	Name string     `json:"name"`
 }
@@ -60,20 +60,20 @@ var handlers = map[ActionType]actionHandler{
 	},
 
 	AtomReq: func(params *ActionParams) (ActionType, any, error) {
-		link := &s.AtomLink{}
-		if err := params.readAs(link); err != nil {
+		id := new(s.AtomID)
+		if err := params.readAs(id); err != nil {
 			log.Printf("error parsing params: %v", err)
 			return NoType, nil, ErrorBadParams
 		}
 
-		if !link.IsValid() {
-			log.Println("error parsing params: not valid atom link")
+		if id == nil {
+			log.Println("error parsing params: can't parse id")
 			return NoType, nil, ErrorBadParams
 		}
 
-		atom := storage.GetAtom(link)
+		atom := storage.GetAtom(*id)
 		if atom == nil {
-			log.Printf("atom not found: %v", link)
+			log.Printf("atom not found: %v", id)
 			return NoType, nil, ErrorNotFound
 		}
 
