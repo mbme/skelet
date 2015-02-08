@@ -21,12 +21,12 @@ const (
 	AtomsList               = "atoms-list"
 	AtomReq                 = "req-atom"
 	Atom                    = "atom"
+	AtomUpdate              = "atom-update"
 	NoType                  = ""
 )
 
 var (
 	ErrorNoHandler = errors.New("no handler for action")
-	ErrorNotFound  = errors.New("atom not found")
 	ErrorBadParams = errors.New("malformed action params")
 )
 
@@ -42,8 +42,8 @@ type atomInfo struct {
 
 func toAtomInfo(atom *s.Atom) *atomInfo {
 	return &atomInfo{
-		ID:   atom.ID,
-		Type: atom.Type,
+		ID:   *atom.ID,
+		Type: *atom.Type,
 		Name: atom.Name,
 	}
 }
@@ -71,13 +71,29 @@ var handlers = map[ActionType]actionHandler{
 			return NoType, nil, ErrorBadParams
 		}
 
-		atom := storage.GetAtom(*id)
-		if atom == nil {
-			log.Printf("atom not found: %v", id)
-			return NoType, nil, ErrorNotFound
+		atom, err := storage.GetAtom(id)
+		if err == nil {
+			return NoType, nil, err
 		}
 
 		return Atom, atom, nil
+	},
+
+	AtomUpdate: func(params *ActionParams) (ActionType, any, error) {
+		atom := &s.Atom{}
+		if err := params.readAs(atom); err != nil {
+			log.Printf("error parsing params: %v", err)
+			return NoType, nil, ErrorBadParams
+		}
+
+		if !atom.IsValid() {
+			log.Println("error parsing params: can't parse atom")
+			return NoType, nil, ErrorBadParams
+		}
+
+		err := storage.UpdateAtom(atom)
+
+		return NoType, nil, err
 	},
 }
 

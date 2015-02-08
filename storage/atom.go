@@ -16,12 +16,16 @@ type AtomID uint32
 
 // Atom is one information piece
 type Atom struct {
-	Type AtomType `json:"type"`
-	ID   AtomID   `json:"id"`
-	Name string   `json:"name"`
-	Data string   `json:"data"`
+	ID   *AtomID   `json:"id"`
+	Type *AtomType `json:"type"`
+	Name string    `json:"name"`
+	Data string    `json:"data"`
 }
 
 func (a *Atom) String() string {
-	return fmt.Sprintf("%s/%v[%s]", a.Type, a.ID, a.Name)
+	return fmt.Sprintf("%v[%v/%s]", &a.ID, &a.Type, a.Name)
+}
+
+func (a *Atom) IsValid() bool {
+	return a.ID != nil && a.Type != nil
 }
