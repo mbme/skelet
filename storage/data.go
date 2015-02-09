@@ -43,7 +43,7 @@ func (l *virtualStorage) GetAtoms() []*Atom {
 
 func (l *virtualStorage) GetAtom(id *AtomID) (*Atom, error) {
 	for _, atom := range l.GetAtoms() {
-		if atom.ID == id {
+		if *atom.ID == *id {
 			return atom, nil
 		}
 	}

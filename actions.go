@@ -48,15 +48,19 @@ func toAtomInfo(atom *s.Atom) *atomInfo {
 	}
 }
 
+func getAtomsList() []*atomInfo {
+	atoms := storage.GetAtoms()
+	infos := make([]*atomInfo, len(atoms))
+	for i, atom := range atoms {
+		infos[i] = toAtomInfo(atom)
+	}
+
+	return infos
+}
+
 var handlers = map[ActionType]actionHandler{
 	AtomsListReq: func(_ *ActionParams) (ActionType, any, error) {
-		atoms := storage.GetAtoms()
-		infos := make([]*atomInfo, len(atoms))
-		for i, atom := range atoms {
-			infos[i] = toAtomInfo(atom)
-		}
-
-		return AtomsList, infos, nil
+		return AtomsList, getAtomsList(), nil
 	},
 
 	AtomReq: func(params *ActionParams) (ActionType, any, error) {
@@ -72,7 +76,8 @@ var handlers = map[ActionType]actionHandler{
 		}
 
 		atom, err := storage.GetAtom(id)
-		if err == nil {
+		if err != nil {
+			log.Printf("can't find atom %s", id)
 			return NoType, nil, err
 		}
 
@@ -91,9 +96,11 @@ var handlers = map[ActionType]actionHandler{
 			return NoType, nil, ErrorBadParams
 		}
 
-		err := storage.UpdateAtom(atom)
+		if err := storage.UpdateAtom(atom); err != nil {
+			return NoType, nil, err
+		}
 
-		return NoType, nil, err
+		return AtomsList, getAtomsList(), nil
 	},
 }
 

@@ -14,6 +14,10 @@ const (
 // AtomID is id of atom
 type AtomID uint32
 
+func (id *AtomID) String() string {
+	return fmt.Sprintf("%v", *id)
+}
+
 // Atom is one information piece
 type Atom struct {
 	ID   *AtomID   `json:"id"`
