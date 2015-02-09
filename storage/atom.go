@@ -11,6 +11,10 @@ const (
 	File            = ":file"
 )
 
+func (t *AtomType) IsValid() bool {
+	return *t == Record || *t == File
+}
+
 // AtomID is id of atom
 type AtomID uint32
 
@@ -27,9 +31,9 @@ type Atom struct {
 }
 
 func (a *Atom) String() string {
-	return fmt.Sprintf("%v[%v/%s]", &a.ID, &a.Type, a.Name)
+	return fmt.Sprintf("[%v]%v/%s", &a.ID, &a.Type, a.Name)
 }
 
 func (a *Atom) IsValid() bool {
-	return a.ID != nil && a.Type != nil
+	return a.ID != nil && a.Type != nil && a.Type.IsValid()
 }
