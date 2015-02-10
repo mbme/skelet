@@ -5,6 +5,7 @@ import "errors"
 type Storager interface {
 	GetAtoms() []*Atom
 	GetAtom(*AtomID) (*Atom, error)
+	CreateAtom(*Atom)
 	UpdateAtom(*Atom) error
 	DeleteAtom(*AtomID) error
 }
@@ -78,4 +79,24 @@ func (l *virtualStorage) DeleteAtom(id *AtomID) error {
 	delete(records, *id)
 
 	return nil
+}
+
+func (l *virtualStorage) getNewId() *AtomID {
+	maxID := AtomID(0)
+
+	for id := range records {
+		if id > maxID {
+			maxID = id
+		}
+	}
+
+	newID := maxID + 1
+
+	return &newID
+}
+
+func (l *virtualStorage) CreateAtom(atom *Atom) {
+	newID := l.getNewId()
+	atom.ID = newID
+	records[*newID] = atom
 }

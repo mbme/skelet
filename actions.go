@@ -6,6 +6,8 @@ import (
 
 	"log"
 
+	"strings"
+
 	s "github.com/mbme/skelet/storage"
 )
 
@@ -17,13 +19,17 @@ type ActionParams json.RawMessage
 
 //Possible actions
 const (
-	AtomsListReq ActionType = "req-atoms-list"
-	AtomsList               = "atoms-list"
-	AtomReq                 = "req-atom"
-	Atom                    = "atom"
-	AtomUpdate              = "atom-update"
-	AtomDelete              = "atom-delete"
-	NoType                  = ""
+	AtomsListRead ActionType = "atoms-list-read"
+
+	AtomRead   = "atom-read"
+	AtomCreate = "atom-create"
+	AtomUpdate = "atom-update"
+	AtomDelete = "atom-delete"
+
+	AtomsList = "atoms-list"
+	Atom      = "atom"
+
+	NoType = ""
 )
 
 var (
@@ -60,11 +66,11 @@ func getAtomsList() []*atomInfo {
 }
 
 var handlers = map[ActionType]actionHandler{
-	AtomsListReq: func(_ *ActionParams) (ActionType, any, error) {
+	AtomsListRead: func(_ *ActionParams) (ActionType, any, error) {
 		return AtomsList, getAtomsList(), nil
 	},
 
-	AtomReq: func(params *ActionParams) (ActionType, any, error) {
+	AtomRead: func(params *ActionParams) (ActionType, any, error) {
 		id := new(s.AtomID)
 		if err := params.readAs(id); err != nil {
 			log.Printf("error parsing params: %v", err)
@@ -92,8 +98,8 @@ var handlers = map[ActionType]actionHandler{
 			return NoType, nil, ErrorBadParams
 		}
 
-		if !atom.IsValid() {
-			log.Println("error parsing params: can't parse atom")
+		if atom.ID == nil || atom.Type == nil || !atom.Type.IsValid() {
+			log.Println("error parsing params: bad atom")
 			return NoType, nil, ErrorBadParams
 		}
 
@@ -119,6 +125,23 @@ var handlers = map[ActionType]actionHandler{
 		if err := storage.DeleteAtom(id); err != nil {
 			return NoType, nil, err
 		}
+
+		return AtomsList, getAtomsList(), nil
+	},
+
+	AtomCreate: func(params *ActionParams) (ActionType, any, error) {
+		atom := &s.Atom{}
+		if err := params.readAs(atom); err != nil {
+			log.Printf("error parsing params: %v", err)
+			return NoType, nil, ErrorBadParams
+		}
+
+		if atom.ID != nil || strings.TrimSpace(atom.Name) == "" {
+			log.Println("error parsing params: bad atom")
+			return NoType, nil, ErrorBadParams
+		}
+
+		storage.CreateAtom(atom)
 
 		return AtomsList, getAtomsList(), nil
 	},
