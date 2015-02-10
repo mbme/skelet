@@ -22,6 +22,7 @@ const (
 	AtomReq                 = "req-atom"
 	Atom                    = "atom"
 	AtomUpdate              = "atom-update"
+	AtomDelete              = "atom-delete"
 	NoType                  = ""
 )
 
@@ -97,6 +98,25 @@ var handlers = map[ActionType]actionHandler{
 		}
 
 		if err := storage.UpdateAtom(atom); err != nil {
+			return NoType, nil, err
+		}
+
+		return AtomsList, getAtomsList(), nil
+	},
+
+	AtomDelete: func(params *ActionParams) (ActionType, any, error) {
+		id := new(s.AtomID)
+		if err := params.readAs(id); err != nil {
+			log.Printf("error parsing params: %v", err)
+			return NoType, nil, ErrorBadParams
+		}
+
+		if id == nil {
+			log.Println("error parsing params: can't parse id")
+			return NoType, nil, ErrorBadParams
+		}
+
+		if err := storage.DeleteAtom(id); err != nil {
 			return NoType, nil, err
 		}
 

@@ -6,25 +6,25 @@ type Storager interface {
 	GetAtoms() []*Atom
 	GetAtom(*AtomID) (*Atom, error)
 	UpdateAtom(*Atom) error
+	DeleteAtom(*AtomID) error
 }
 
 var (
 	ErrorAtomNotFound = errors.New("atom not found")
 )
 
-func newRecord(id int, name, data string) *Atom {
-	atomID := AtomID(id)
+func newRecord(id AtomID, name, data string) *Atom {
 	atomType := Record
 
 	return &Atom{
 		Type: &atomType,
-		ID:   &atomID,
+		ID:   &id,
 		Name: name,
 		Data: data,
 	}
 }
 
-var records = []*Atom{}
+var records = map[AtomID]*Atom{}
 
 type virtualStorage struct {
 }
@@ -32,22 +32,29 @@ type virtualStorage struct {
 // NewStorage create new Storage instance
 func NewStorage() Storager {
 	for i, rec := range rawData {
-		records = append(records, newRecord(i, rec.Name, rec.Data))
+		id := AtomID(i)
+		records[id] = newRecord(id, rec.Name, rec.Data)
 	}
 	return &virtualStorage{}
 }
 
 func (l *virtualStorage) GetAtoms() []*Atom {
-	return records
+	var atoms []*Atom
+	for _, a := range records {
+		atoms = append(atoms, a)
+	}
+
+	return atoms
 }
 
 func (l *virtualStorage) GetAtom(id *AtomID) (*Atom, error) {
-	for _, atom := range l.GetAtoms() {
-		if *atom.ID == *id {
-			return atom, nil
-		}
+	atom, ok := records[*id]
+
+	if !ok {
+		return nil, ErrorAtomNotFound
 	}
-	return nil, ErrorAtomNotFound
+
+	return atom, nil
 }
 
 func (l *virtualStorage) UpdateAtom(newAtom *Atom) error {
@@ -59,6 +66,16 @@ func (l *virtualStorage) UpdateAtom(newAtom *Atom) error {
 	atom.Type = newAtom.Type
 	atom.Name = newAtom.Name
 	atom.Data = newAtom.Data
+
+	return nil
+}
+
+func (l *virtualStorage) DeleteAtom(id *AtomID) error {
+	if _, err := l.GetAtom(id); err != nil {
+		return err
+	}
+
+	delete(records, *id)
 
 	return nil
 }
