@@ -31,5 +31,5 @@ type Atom struct {
 }
 
 func (a *Atom) String() string {
-	return fmt.Sprintf("[%v]%v/%s", &a.ID, &a.Type, a.Name)
+	return fmt.Sprintf("%v%v/%s", &a.ID, &a.Type, a.Name)
 }
