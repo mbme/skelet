@@ -175,4 +175,19 @@ Right aligned columns
 
 Autoconverted link https://github.com/nodeca/pica (enable linkify to see)
 `},
+	{"1 Большой текст",
+		`
+Компания Mozilla в своём блоге объявила о новых правилах безопасности, касающихся дополнений к их браузеру Firefox. В данный момент дополнение можно установить как из их коллекции AMO, так и с любого другого сайта. Из-за этой свободы для разработчиков дополнений участились случаи появления злонамеренных расширений. Они подменяют части страницы, вставляют на страницы рекламу или совершают другие неприятные действия. Поэтому в скором времени дополнения, которые можно установить в браузер, будут проходить процедуру обязательной проверки и подписи.
+
+Дополнения, находящиеся в коллекции AMO, в любом случае проходят проверку и будут подписываться автоматически. Другие дополнения можно будет подавать на автоматическую проверку и последующую подпись, а если они не пойдут автоматическую проверку, будет возможность запросить проверку вручную. Переходный период займёт 12 недель. После этого на Release и Beta версии браузера нельзя будет устанавливать неподписанные дополнения.
+
+Разработчики дополнений смогут тестировать неподписанные версии на ночных сборках или специальных редакциях браузера для разработчиков. Для тех, кто использует проприетарные непубличные дополнения для своих проектов, будет существовать возможность делать это и далее. Таким образом в Mozilla надеются повысить безопасность их браузера для пользователей. Эти планы пока не распространяются на другие проекты компании, Thunderbird или SeaMonkey.
+`},
+	{"A Large Text",
+		`You might not think Canada’s digital spies are on par with those in the US and UK—but rest assured, America’s northern neighbour is just as capable of perpetuating mass surveillance on a global scale. Case in point: at over 200 locations around the world, spies from Canada's cyberintelligence agency have been monitoring huge volumes of global internet traffic travelling across the internet's core.
+
+​From these locations, Communications Security Establishment (CSE) can track who is accessing websites and files of interest. Its analysts can also log email addresses, phone numbers and even the content of unencrypted communications—and retain encrypted communication for later study, too—as well as intercept passwords and login details for later access to remote servers and websites.
+
+​But perhaps more importantly, tapping into global internet traffic is a means for CSE to monitor, and also exploit, an ever growing list of digital threats, such as vulnerabilities in networks and computers and the spread of malware as well as botnets and the computers under their control. In the process, analysts can keep tabs on both friendly and foreign governments conducting covert cyber attacks and infiltration of their own.
+`},
 }
