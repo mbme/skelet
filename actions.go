@@ -29,7 +29,8 @@ const (
 	AtomsList = "atoms-list"
 	Atom      = "atom"
 
-	NoType = ""
+	BadRequest = "bad-request"
+	NoType     = ""
 )
 
 var (

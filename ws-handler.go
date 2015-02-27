@@ -27,6 +27,10 @@ type ActionResultWrapper struct {
 	Params any        `json:"params"`
 }
 
+func badRequestResp(errType string) *ActionResultWrapper {
+	return &ActionResultWrapper{BadRequest, errType}
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -55,11 +59,13 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.Printf("can't parse message: %v", err)
-			return
+			writeResponse(conn, badRequestResp("can't parse"))
+			continue
 		}
 
 		if req.Type == NoType {
 			log.Printf("no type in request %v", req)
+			writeResponse(conn, badRequestResp("missing type"))
 			continue
 		}
 
@@ -68,6 +74,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			log.Printf("%v -> %v", req.Type, err)
+			writeResponse(conn, badRequestResp(err.Error()))
 			continue
 		}
 
@@ -83,10 +90,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			Params: respParams,
 		}
 
-		// write response
-		if err = conn.WriteJSON(resp); err != nil {
-			log.Printf("can't write response: %v", err)
-			continue
-		}
+		writeResponse(conn, resp)
+	}
+}
+
+func writeResponse(conn *websocket.Conn, resp *ActionResultWrapper) {
+	if err := conn.WriteJSON(resp); err != nil {
+		log.Printf("can't write response: %v", err)
 	}
 }
