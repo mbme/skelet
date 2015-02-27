@@ -43,9 +43,9 @@ var startApp = function () {
 };
 
 var tryToBuild = function () {
-    Proc.exec(config.buildCommand, function (error) {
+    Proc.exec(config.buildCommand, function (error, stdout, stderr) {
         if (error) {
-            log("build failed");
+            log("build failed:".red + "\n" + stderr);
             return;
         }
 
