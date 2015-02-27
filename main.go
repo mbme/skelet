@@ -29,7 +29,7 @@ func main() {
 		var port = c.String("port")
 		log.Printf("listening on port %v", port)
 
-		http.HandleFunc("/ws", WsHandler)
+		http.HandleFunc("/ws", wsHandler)
 
 		if err := http.ListenAndServe(":"+port, nil); err != nil {
 			log.Fatal(err)

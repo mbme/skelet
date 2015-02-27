@@ -11,26 +11,26 @@ import (
 
 type any interface{}
 
-func (p *ActionParams) readAs(v any) error {
+func (p *RequestParams) readAs(v any) error {
 	return json.Unmarshal(*p, v)
 }
 
-//ActionWrapper action
-type ActionWrapper struct {
-	Type   ActionType      `json:"action"`
+// JSON RPC
+type requestID uint32
+
+type request struct {
+	Method RequestMethod   `json:"method"`
 	Params json.RawMessage `json:"params"`
+	ID     *requestID      `json:"id"`
 }
 
-//ActionResultWrapper action result
-type ActionResultWrapper struct {
-	Type   ActionType `json:"action"`
-	Params any        `json:"params"`
+type response struct {
+	Result any        `json:"result"`
+	Error  error      `json:"error"`
+	ID     *requestID `json:"id"`
 }
 
-func badRequestResp(errType string) *ActionResultWrapper {
-	return &ActionResultWrapper{BadRequest, errType}
-}
-
+// HTTP websocket upgrader
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -41,7 +41,7 @@ var upgrader = websocket.Upgrader{
 }
 
 //WsHandler websocket connection handler
-func WsHandler(w http.ResponseWriter, r *http.Request) {
+func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -51,7 +51,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		// parse request
-		req := &ActionWrapper{}
+		req := &request{}
 		if err = conn.ReadJSON(req); err != nil {
 			if err == io.EOF {
 				log.Println("connection: closed")
@@ -59,43 +59,31 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.Printf("can't parse message: %v", err)
-			writeResponse(conn, badRequestResp("can't parse"))
-			continue
+			return // close websocket
 		}
 
-		if req.Type == NoType {
-			log.Printf("no type in request %v", req)
-			writeResponse(conn, badRequestResp("missing type"))
-			continue
+		if req.Method == NoType || req.ID == nil {
+			log.Printf("bad request %v", req)
+			return // close websocket
 		}
 
-		params := ActionParams(req.Params)
-		respType, respParams, err := HandleAction(req.Type, &params)
-
-		if err != nil {
-			log.Printf("%v -> %v", req.Type, err)
-			writeResponse(conn, badRequestResp(err.Error()))
-			continue
+		resp := &response{
+			ID: req.ID,
 		}
 
-		log.Printf("%v -> %v", req.Type, respType)
+		// process request
+		params := RequestParams(req.Params)
+		resp.Result, resp.Error = ProcessRequest(req.Method, &params)
 
-		if respType == NoType {
-			continue
+		if resp.Error == nil {
+			log.Printf("$v -> ok")
+		} else {
+			log.Printf("%v -> error: %v", req.Method, resp.Error)
 		}
 
 		// write response
-		resp := &ActionResultWrapper{
-			Type:   respType,
-			Params: respParams,
+		if err = conn.WriteJSON(resp); err != nil {
+			log.Printf("can't write response: %v", err)
 		}
-
-		writeResponse(conn, resp)
-	}
-}
-
-func writeResponse(conn *websocket.Conn, resp *ActionResultWrapper) {
-	if err := conn.WriteJSON(resp); err != nil {
-		log.Printf("can't write response: %v", err)
 	}
 }

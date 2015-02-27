@@ -11,36 +11,30 @@ import (
 	s "github.com/mbme/skelet/storage"
 )
 
-//ActionType type of action
-type ActionType string
+//RequestMethod types of client requests
+type RequestMethod string
 
-//ActionParams action raw parameters
-type ActionParams json.RawMessage
+//RequestParams raw parameters
+type RequestParams json.RawMessage
 
-//Possible actions
+//Possible requests
 const (
-	AtomsListRead ActionType = "atoms-list-read"
+	AtomsListRead RequestMethod = "atoms-list-read"
 
 	AtomRead   = "atom-read"
 	AtomCreate = "atom-create"
 	AtomUpdate = "atom-update"
 	AtomDelete = "atom-delete"
 
-	AtomsList = "atoms-list"
-	Atom      = "atom"
-
-	BadRequest = "bad-request"
-	NoType     = ""
+	NoType = ""
 )
 
 var (
-	ErrorNoHandler = errors.New("no handler for action")
-	ErrorBadParams = errors.New("malformed action params")
+	ErrorNoHandler = errors.New("no handler for request")
+	ErrorBadParams = errors.New("malformed request params")
 )
 
 var storage = s.NewStorage()
-
-type actionHandler func(*ActionParams) (ActionType, any, error)
 
 type atomInfo struct {
 	ID   s.AtomID   `json:"id"`
@@ -66,94 +60,96 @@ func getAtomsList() []*atomInfo {
 	return infos
 }
 
-var handlers = map[ActionType]actionHandler{
-	AtomsListRead: func(_ *ActionParams) (ActionType, any, error) {
-		return AtomsList, getAtomsList(), nil
+type requestHandler func(*RequestParams) (any, error)
+
+var handlers = map[RequestMethod]requestHandler{
+	AtomsListRead: func(_ *RequestParams) (any, error) {
+		return getAtomsList(), nil
 	},
 
-	AtomRead: func(params *ActionParams) (ActionType, any, error) {
+	AtomRead: func(params *RequestParams) (any, error) {
 		id := new(s.AtomID)
 		if err := params.readAs(id); err != nil {
 			log.Printf("error parsing params: %v", err)
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		if id == nil {
 			log.Println("error parsing params: can't parse id")
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		atom, err := storage.GetAtom(id)
 		if err != nil {
 			log.Printf("can't find atom %s", id)
-			return NoType, nil, err
+			return nil, err
 		}
 
-		return Atom, atom, nil
+		return atom, nil
 	},
 
-	AtomUpdate: func(params *ActionParams) (ActionType, any, error) {
+	AtomUpdate: func(params *RequestParams) (any, error) {
 		atom := &s.Atom{}
 		if err := params.readAs(atom); err != nil {
 			log.Printf("error parsing params: %v", err)
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		if atom.ID == nil || atom.Type == nil || !atom.Type.IsValid() {
 			log.Println("error parsing params: bad atom")
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		if err := storage.UpdateAtom(atom); err != nil {
-			return NoType, nil, err
+			return nil, err
 		}
 
-		return AtomsList, getAtomsList(), nil
+		return getAtomsList(), nil
 	},
 
-	AtomDelete: func(params *ActionParams) (ActionType, any, error) {
+	AtomDelete: func(params *RequestParams) (any, error) {
 		id := new(s.AtomID)
 		if err := params.readAs(id); err != nil {
 			log.Printf("error parsing params: %v", err)
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		if id == nil {
 			log.Println("error parsing params: can't parse id")
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		if err := storage.DeleteAtom(id); err != nil {
-			return NoType, nil, err
+			return nil, err
 		}
 
-		return AtomsList, getAtomsList(), nil
+		return getAtomsList(), nil
 	},
 
-	AtomCreate: func(params *ActionParams) (ActionType, any, error) {
+	AtomCreate: func(params *RequestParams) (any, error) {
 		atom := &s.Atom{}
 		if err := params.readAs(atom); err != nil {
 			log.Printf("error parsing params: %v", err)
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		if atom.ID != nil || strings.TrimSpace(atom.Name) == "" {
 			log.Println("error parsing params: bad atom")
-			return NoType, nil, ErrorBadParams
+			return nil, ErrorBadParams
 		}
 
 		storage.CreateAtom(atom)
 
-		return AtomsList, getAtomsList(), nil
+		return getAtomsList(), nil
 	},
 }
 
-// HandleAction handle client action and produce own action
-func HandleAction(actionType ActionType, params *ActionParams) (ActionType, any, error) {
-	handler, ok := handlers[actionType]
+// ProcessRequest handle client request
+func ProcessRequest(reqType RequestMethod, params *RequestParams) (any, error) {
+	handler, ok := handlers[reqType]
 
 	if !ok {
-		return NoType, nil, ErrorNoHandler
+		return nil, ErrorNoHandler
 	}
 
 	return handler(params)
