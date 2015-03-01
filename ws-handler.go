@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"fmt"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -24,9 +26,13 @@ type request struct {
 	ID     *requestID      `json:"id"`
 }
 
+func (req *request) String() string {
+	return fmt.Sprintf("[ id: %v | method: %v ]", req.ID, req.Method)
+}
+
 type response struct {
 	Result any        `json:"result"`
-	Error  error      `json:"error"`
+	Error  *string    `json:"error"`
 	ID     *requestID `json:"id"`
 }
 
@@ -63,7 +69,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if req.Method == NoType || req.ID == nil {
-			log.Printf("bad request %v", req)
+			log.Printf("bad request %s", req)
 			return // close websocket
 		}
 
@@ -73,12 +79,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// process request
 		params := RequestParams(req.Params)
-		resp.Result, resp.Error = ProcessRequest(req.Method, &params)
+		resp.Result, err = ProcessRequest(req.Method, &params)
 
-		if resp.Error == nil {
-			log.Printf("$v -> ok")
+		if err == nil {
+			log.Printf("%v -> ok", req.Method)
 		} else {
-			log.Printf("%v -> error: %v", req.Method, resp.Error)
+			errStr := err.Error()
+			resp.Error = &errStr
+			log.Printf("%v -> error: %v", req.Method, errStr)
 		}
 
 		// write response
