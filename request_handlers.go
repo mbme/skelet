@@ -104,7 +104,7 @@ var handlers = map[RequestMethod]requestHandler{
 			return nil, err
 		}
 
-		return getAtomsList(), nil
+		return atom.ID, nil
 	},
 
 	AtomDelete: func(params *RequestParams) (any, error) {
@@ -123,7 +123,7 @@ var handlers = map[RequestMethod]requestHandler{
 			return nil, err
 		}
 
-		return getAtomsList(), nil
+		return id, nil
 	},
 
 	AtomCreate: func(params *RequestParams) (any, error) {
@@ -140,7 +140,7 @@ var handlers = map[RequestMethod]requestHandler{
 
 		storage.CreateAtom(atom)
 
-		return getAtomsList(), nil
+		return atom.ID, nil
 	},
 }
 
