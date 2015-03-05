@@ -6,9 +6,12 @@ import (
 
 	"log"
 
-	"strings"
-
 	s "github.com/mbme/skelet/storage"
+)
+
+var (
+	errorNoHandler = errors.New("no handler for request")
+	errorBadParams = errors.New("malformed request params")
 )
 
 //RequestMethod types of client requests
@@ -29,24 +32,21 @@ const (
 	NoType = ""
 )
 
-var (
-	ErrorNoHandler = errors.New("no handler for request")
-	ErrorBadParams = errors.New("malformed request params")
-)
-
 var storage = s.NewStorage()
 
 type atomInfo struct {
-	ID   s.AtomID   `json:"id"`
-	Type s.AtomType `json:"type"`
-	Name string     `json:"name"`
+	ID         s.AtomID     `json:"id"`
+	Type       s.AtomType   `json:"type"`
+	Name       string       `json:"name"`
+	Categories []s.Category `json:"categories"`
 }
 
 func toAtomInfo(atom *s.Atom) *atomInfo {
 	return &atomInfo{
-		ID:   *atom.ID,
-		Type: *atom.Type,
-		Name: atom.Name,
+		ID:         *atom.ID,
+		Type:       *atom.Type,
+		Name:       atom.Name,
+		Categories: atom.Categories,
 	}
 }
 
@@ -60,9 +60,7 @@ func getAtomsList() []*atomInfo {
 	return infos
 }
 
-type requestHandler func(*RequestParams) (any, error)
-
-var handlers = map[RequestMethod]requestHandler{
+var handlers = map[RequestMethod]func(*RequestParams) (any, error){
 	AtomsListRead: func(_ *RequestParams) (any, error) {
 		return getAtomsList(), nil
 	},
@@ -71,12 +69,12 @@ var handlers = map[RequestMethod]requestHandler{
 		id := new(s.AtomID)
 		if err := params.readAs(id); err != nil {
 			log.Printf("error parsing params: %v", err)
-			return nil, ErrorBadParams
+			return nil, errorBadParams
 		}
 
 		if id == nil {
 			log.Println("error parsing params: can't parse id")
-			return nil, ErrorBadParams
+			return nil, errorBadParams
 		}
 
 		atom, err := storage.GetAtom(id)
@@ -88,16 +86,43 @@ var handlers = map[RequestMethod]requestHandler{
 		return atom, nil
 	},
 
+	AtomCreate: func(params *RequestParams) (any, error) {
+		atom := &s.Atom{}
+		if err := params.readAs(atom); err != nil {
+			log.Printf("error parsing params: %v", err)
+			return nil, errorBadParams
+		}
+
+		errors := atom.Validate()
+		if atom.ID != nil {
+			errors = append(errors, "id is not nil")
+		}
+
+		if len(errors) > 0 {
+			log.Printf("error parsing params: %v", errors)
+			return errors, errorBadParams
+		}
+
+		storage.CreateAtom(atom)
+
+		return atom.ID, nil
+	},
+
 	AtomUpdate: func(params *RequestParams) (any, error) {
 		atom := &s.Atom{}
 		if err := params.readAs(atom); err != nil {
 			log.Printf("error parsing params: %v", err)
-			return nil, ErrorBadParams
+			return nil, errorBadParams
 		}
 
-		if atom.ID == nil || atom.Type == nil || !atom.Type.IsValid() {
-			log.Println("error parsing params: bad atom")
-			return nil, ErrorBadParams
+		errors := atom.Validate()
+		if atom.ID == nil {
+			errors = append(errors, "missing id")
+		}
+
+		if len(errors) > 0 {
+			log.Printf("error parsing params: %v", errors)
+			return errors, errorBadParams
 		}
 
 		if err := storage.UpdateAtom(atom); err != nil {
@@ -111,12 +136,12 @@ var handlers = map[RequestMethod]requestHandler{
 		id := new(s.AtomID)
 		if err := params.readAs(id); err != nil {
 			log.Printf("error parsing params: %v", err)
-			return nil, ErrorBadParams
+			return nil, errorBadParams
 		}
 
 		if id == nil {
 			log.Println("error parsing params: can't parse id")
-			return nil, ErrorBadParams
+			return nil, errorBadParams
 		}
 
 		if err := storage.DeleteAtom(id); err != nil {
@@ -125,23 +150,6 @@ var handlers = map[RequestMethod]requestHandler{
 
 		return id, nil
 	},
-
-	AtomCreate: func(params *RequestParams) (any, error) {
-		atom := &s.Atom{}
-		if err := params.readAs(atom); err != nil {
-			log.Printf("error parsing params: %v", err)
-			return nil, ErrorBadParams
-		}
-
-		if atom.ID != nil || strings.TrimSpace(atom.Name) == "" {
-			log.Println("error parsing params: bad atom")
-			return nil, ErrorBadParams
-		}
-
-		storage.CreateAtom(atom)
-
-		return atom.ID, nil
-	},
 }
 
 // ProcessRequest handle client request
@@ -149,7 +157,7 @@ func ProcessRequest(reqType RequestMethod, params *RequestParams) (any, error) {
 	handler, ok := handlers[reqType]
 
 	if !ok {
-		return nil, ErrorNoHandler
+		return nil, errorNoHandler
 	}
 
 	return handler(params)

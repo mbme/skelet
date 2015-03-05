@@ -2,6 +2,7 @@ package storage
 
 import "errors"
 
+// Storager general storage interface
 type Storager interface {
 	GetAtoms() []*Atom
 	GetAtom(*AtomID) (*Atom, error)
@@ -11,17 +12,18 @@ type Storager interface {
 }
 
 var (
-	ErrorAtomNotFound = errors.New("atom not found")
+	errorAtomNotFound = errors.New("atom not found")
 )
 
-func newRecord(id AtomID, name, data string) *Atom {
+func newRecord(id AtomID, name, data string, categories []Category) *Atom {
 	atomType := Record
 
 	return &Atom{
-		Type: &atomType,
-		ID:   &id,
-		Name: name,
-		Data: data,
+		Type:       &atomType,
+		ID:         &id,
+		Name:       name,
+		Data:       data,
+		Categories: categories,
 	}
 }
 
@@ -34,7 +36,7 @@ type virtualStorage struct {
 func NewStorage() Storager {
 	for i, rec := range rawData {
 		id := AtomID(i)
-		records[id] = newRecord(id, rec.Name, rec.Data)
+		records[id] = newRecord(id, rec.Name, rec.Data, rec.Categories)
 	}
 	return &virtualStorage{}
 }
@@ -52,7 +54,7 @@ func (l *virtualStorage) GetAtom(id *AtomID) (*Atom, error) {
 	atom, ok := records[*id]
 
 	if !ok {
-		return nil, ErrorAtomNotFound
+		return nil, errorAtomNotFound
 	}
 
 	return atom, nil
@@ -81,7 +83,7 @@ func (l *virtualStorage) DeleteAtom(id *AtomID) error {
 	return nil
 }
 
-func (l *virtualStorage) getNewId() *AtomID {
+func (l *virtualStorage) getNewID() *AtomID {
 	maxID := AtomID(0)
 
 	for id := range records {
@@ -96,7 +98,7 @@ func (l *virtualStorage) getNewId() *AtomID {
 }
 
 func (l *virtualStorage) CreateAtom(atom *Atom) {
-	newID := l.getNewId()
+	newID := l.getNewID()
 	atom.ID = newID
 	records[*newID] = atom
 }
