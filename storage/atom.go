@@ -2,9 +2,21 @@ package storage
 
 import "fmt"
 import "strings"
+import "time"
+import "strconv"
 
 // AtomType is type of atom
 type AtomType string
+
+// possible atom types
+const (
+	Record AtomType = ":record"
+	File            = ":file"
+)
+
+func (t *AtomType) isValid() bool {
+	return *t == Record || *t == File
+}
 
 // Category is atom category (context)
 type Category string
@@ -17,21 +29,19 @@ func (c Category) isValid() bool {
 	return str == trimmed && str == lower
 }
 
-// possible atom types
-const (
-	Record AtomType = ":record"
-	File            = ":file"
-)
-
-func (t *AtomType) isValid() bool {
-	return *t == Record || *t == File
-}
-
 // AtomID is id of atom
 type AtomID uint32
 
 func (id *AtomID) String() string {
 	return fmt.Sprintf("%v", *id)
+}
+
+// AtomTime timestamp
+type AtomTime time.Time
+
+// MarshalJSON implements json_Marshaller
+func (t AtomTime) MarshalJSON() ([]byte, error) {
+	return []byte(strconv.FormatInt(time.Time(t).Unix(), 10)), nil
 }
 
 // Atom is one information piece
@@ -41,6 +51,8 @@ type Atom struct {
 	Name       string     `json:"name"`
 	Data       string     `json:"data"`
 	Categories []Category `json:"categories"`
+	TsCreated  *AtomTime  `json:"ts_created"`
+	TsUpdated  *AtomTime  `json:"ts_updated"`
 }
 
 func (a *Atom) String() string {

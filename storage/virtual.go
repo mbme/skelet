@@ -1,36 +1,43 @@
 package storage
 
 import "errors"
+import "time"
 
-// Storager general storage interface
-type Storager interface {
-	GetAtoms() []*Atom
-	GetAtom(*AtomID) (*Atom, error)
-	CreateAtom(*Atom)
-	UpdateAtom(*Atom) error
-	DeleteAtom(*AtomID) error
+var errorAtomNotFound = errors.New("atom not found")
+
+type virtualStorage struct {
 }
-
-var (
-	errorAtomNotFound = errors.New("atom not found")
-)
 
 func newRecord(id AtomID, name, data string, categories []Category) *Atom {
 	atomType := Record
 
+	now := AtomTime(time.Now())
 	return &Atom{
 		Type:       &atomType,
 		ID:         &id,
 		Name:       name,
 		Data:       data,
 		Categories: categories,
+		TsCreated:  &now,
+		TsUpdated:  &now,
 	}
 }
 
-var records = map[AtomID]*Atom{}
+func (l *virtualStorage) getNewID() *AtomID {
+	maxID := AtomID(0)
 
-type virtualStorage struct {
+	for id := range records {
+		if id > maxID {
+			maxID = id
+		}
+	}
+
+	newID := maxID + 1
+
+	return &newID
 }
+
+var records = map[AtomID]*Atom{}
 
 // NewStorage create new Storage instance
 func NewStorage() Storager {
@@ -50,6 +57,17 @@ func (l *virtualStorage) GetAtoms() []*Atom {
 	return atoms
 }
 
+func (l *virtualStorage) CreateAtom(atom *Atom) {
+	now := AtomTime(time.Now())
+	atom.TsCreated = &now
+	atom.TsUpdated = &now
+
+	newID := l.getNewID()
+	atom.ID = newID
+
+	records[*newID] = atom
+}
+
 func (l *virtualStorage) GetAtom(id *AtomID) (*Atom, error) {
 	atom, ok := records[*id]
 
@@ -65,6 +83,9 @@ func (l *virtualStorage) UpdateAtom(newAtom *Atom) error {
 	if err != nil {
 		return err
 	}
+
+	now := AtomTime(time.Now())
+	atom.TsUpdated = &now
 
 	atom.Type = newAtom.Type
 	atom.Name = newAtom.Name
@@ -82,24 +103,4 @@ func (l *virtualStorage) DeleteAtom(id *AtomID) error {
 	delete(records, *id)
 
 	return nil
-}
-
-func (l *virtualStorage) getNewID() *AtomID {
-	maxID := AtomID(0)
-
-	for id := range records {
-		if id > maxID {
-			maxID = id
-		}
-	}
-
-	newID := maxID + 1
-
-	return &newID
-}
-
-func (l *virtualStorage) CreateAtom(atom *Atom) {
-	newID := l.getNewID()
-	atom.ID = newID
-	records[*newID] = atom
 }

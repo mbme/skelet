@@ -39,6 +39,8 @@ type atomInfo struct {
 	Type       s.AtomType   `json:"type"`
 	Name       string       `json:"name"`
 	Categories []s.Category `json:"categories"`
+	TsCreated  *s.AtomTime  `json:"ts_created"`
+	TsUpdated  *s.AtomTime  `json:"ts_updated"`
 }
 
 func toAtomInfo(atom *s.Atom) *atomInfo {
@@ -47,6 +49,8 @@ func toAtomInfo(atom *s.Atom) *atomInfo {
 		Type:       *atom.Type,
 		Name:       atom.Name,
 		Categories: atom.Categories,
+		TsCreated:  atom.TsCreated,
+		TsUpdated:  atom.TsUpdated,
 	}
 }
 
@@ -98,6 +102,14 @@ var handlers = map[RequestMethod]func(*RequestParams) (any, error){
 			errors = append(errors, "id is not nil")
 		}
 
+		if atom.TsCreated != nil {
+			errors = append(errors, "creation timestamp is not nil")
+		}
+
+		if atom.TsUpdated != nil {
+			errors = append(errors, "creation timestamp is not nil")
+		}
+
 		if len(errors) > 0 {
 			log.Printf("error parsing params: %v", errors)
 			return errors, errorBadParams
@@ -105,7 +117,7 @@ var handlers = map[RequestMethod]func(*RequestParams) (any, error){
 
 		storage.CreateAtom(atom)
 
-		return atom.ID, nil
+		return atom, nil
 	},
 
 	AtomUpdate: func(params *RequestParams) (any, error) {
@@ -120,6 +132,14 @@ var handlers = map[RequestMethod]func(*RequestParams) (any, error){
 			errors = append(errors, "missing id")
 		}
 
+		if atom.TsCreated != nil {
+			errors = append(errors, "creation timestamp is not nil")
+		}
+
+		if atom.TsUpdated != nil {
+			errors = append(errors, "creation timestamp is not nil")
+		}
+
 		if len(errors) > 0 {
 			log.Printf("error parsing params: %v", errors)
 			return errors, errorBadParams
@@ -129,7 +149,7 @@ var handlers = map[RequestMethod]func(*RequestParams) (any, error){
 			return nil, err
 		}
 
-		return atom.ID, nil
+		return atom, nil
 	},
 
 	AtomDelete: func(params *RequestParams) (any, error) {
