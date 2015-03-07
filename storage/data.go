@@ -69,6 +69,7 @@ func (l *virtualStorage) UpdateAtom(newAtom *Atom) error {
 	atom.Type = newAtom.Type
 	atom.Name = newAtom.Name
 	atom.Data = newAtom.Data
+	atom.Categories = newAtom.Categories
 
 	return nil
 }

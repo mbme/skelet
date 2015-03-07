@@ -48,7 +48,7 @@ func (a *Atom) String() string {
 }
 
 func unique(arr []Category) []Category {
-	result := make([]Category, len(arr))
+	var result []Category
 	seen := map[Category]int{}
 
 	for _, category := range arr {
@@ -61,6 +61,7 @@ func unique(arr []Category) []Category {
 	return result
 }
 
+// Validate validates atom and returns array of errors
 func (a *Atom) Validate() []string {
 	var errors []string
 
